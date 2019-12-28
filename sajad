@@ -1,0 +1,882 @@
+package com.example.acer.laundry;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.text.TextUtils;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+public class Login extends AppCompatActivity {
+
+Button Login;
+EditText Edtemail,Edtpassword;
+TextView Daftar;
+RelativeLayout relativeLayoutProgress;
+private FirebaseAuth firebaseAuth;
+private boolean loggedIn;
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+super.onCreate(savedInstanceState);
+setContentView(R.layout.activity_login);
+Login = findViewById(R.id.Btn_login);
+Daftar = findViewById(R.id.Txt_daftar);
+Edtemail = findViewById(R.id.Edt_email);
+Edtpassword = findViewById(R.id.Edt_password);
+relativeLayoutProgress =
+findViewById(R.id.relative_layout_progress_activity_main)
+;
+initFirebase();
+loggedIn = isLoggedIn();
+if (loggedIn){
+goToDashboard();
+}
+Login.setOnClickListener(new
+View.OnClickListener() {
+@Override
+public void onClick(View view) {
+String username =
+Edtemail.getText().toString().trim();
+String password =
+Edtpassword.getText().toString().trim();
+login(username, password);
+}
+});
+Daftar.setOnClickListener(new
+View.OnClickListener() {
+@Override
+public void onClick(View view) {
+Intent daftar = new Intent(Login.this,
+com.example.acer.laundry.SignUp.Daftar.class);
+startActivity(daftar);
+}
+});
+}
+public void initFirebase(){
+firebaseAuth = FirebaseAuth.getInstance();
+}
+private void goToDashboard() {
+Intent dashboard = new Intent(this, Home.class);
+startActivity(dashboard);
+}
+private void login(final String username, final
+String password) {
+if (TextUtils.isEmpty(username)) {
+Toast.makeText(this, "Email Belum Di Isi",
+Toast.LENGTH_SHORT).show();
+} else if (TextUtils.isEmpty(password)) {
+Toast.makeText(this, "Password Belum Di Isi",
+Toast.LENGTH_SHORT).show();
+} else {
+Log.d("tes", "outcome = " +
+username+password);
+// do login
+showProgress();
+firebaseAuth.signInWithEmailAndPassword(username,
+password)
+.addOnCompleteListener(this, new
+OnCompleteListener<AuthResult>() {
+@Override
+public void onComplete(@NonNull
+Task<AuthResult> task) {
+hideProgress();
+if (task.isSuccessful()) {
+// login sucess
+// go to dashboard
+goToDashboard();
+} else {
+// login failed
+showMessageBox("Login
+failed. Your username and password is not matched");
+}
+}
+});
+}
+}
+private void showMessageBox(String message) {
+AlertDialog.Builder alertDialogBuilder = new
+AlertDialog.Builder(this);
+alertDialogBuilder.setTitle("Login");
+alertDialogBuilder.setMessage(message);
+alertDialogBuilder.setCancelable(false);
+alertDialogBuilder.setPositiveButton("OK", new
+DialogInterface.OnClickListener() {
+@Override
+public void onClick(DialogInterface
+dialogInterface, int i) {
+dialogInterface.dismiss();
+}
+});
+alertDialogBuilder.show();
+}
+private void hideProgress() {
+relativeLayoutProgress.setVisibility(View.GONE);
+Edtemail.setEnabled(true);
+Edtpassword.setEnabled(true);
+}
+private void showProgress() {
+relativeLayoutProgress.setVisibility(View.VISIBLE);
+Edtemail.setEnabled(false);
+Edtpassword.setEnabled(false);
+}
+public boolean isLoggedIn() {
+if (firebaseAuth.getCurrentUser() != null) {
+// user logged in
+return true;
+} else {
+return false;
+}
+}
+
+
+public class Daftar extends AppCompatActivity {
+Button daftar;
+EditText Edtnama,Edtemail,Edttelepon,Edtpassword;
+ProgressBar progressBar;
+FirebaseAuth firebaseAuth;
+private FirebaseUser user;
+private DatabaseReference databaseReference;
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+super.onCreate(savedInstanceState);
+setContentView(R.layout.activity_daftar);
+daftar = findViewById(R.id.Btn_daftar);
+Edtnama = findViewById(R.id.Edt_nama);
+Edtemail = findViewById(R.id.Edt_email);
+Edttelepon = findViewById(R.id.Edt_telepon);
+Edtpassword = findViewById(R.id.Edt_password);
+progressBar =
+findViewById(R.id.progress_activity_signup);
+initFirebase();
+daftar.setOnClickListener(new
+View.OnClickListener() {
+@Override
+public void onClick(View view) {
+String email =
+Edtemail.getText().toString().trim();
+String password =
+Edtpassword.getText().toString().trim();
+String nama =
+Edtnama.getText().toString().trim();
+String telepon =
+Edttelepon.getText().toString().trim();
+signup(nama,telepon,email,password);
+}
+});
+}
+private void initFirebase(){
+firebaseAuth = FirebaseAuth.getInstance();
+databaseReference =
+FirebaseDatabase.getInstance().getReference();
+}
+private void signup(final String nama, final String
+telepon, final String email, String password ) {
+if (TextUtils.isEmpty(nama)) {
+Toast.makeText(this, "Nama Belum Di Isi",
+Toast.LENGTH_SHORT).show();
+} else if (TextUtils.isEmpty(telepon)) {
+Toast.makeText(this, "Nomor Telepon Belum Di
+Isi", Toast.LENGTH_SHORT).show();
+}
+else if (TextUtils.isEmpty(email)) {
+Toast.makeText(this, "Email Belum Di Isi",
+Toast.LENGTH_SHORT).show();
+}
+else if (TextUtils.isEmpty(password)) {
+Toast.makeText(this, "Password Belum Di Isi",
+Toast.LENGTH_SHORT).show();
+}else {
+showProgress();
+firebaseAuth.createUserWithEmailAndPassword(email,
+password)
+.addOnCompleteListener(new
+OnCompleteListener<AuthResult>() {
+@Override
+public void onComplete(@NonNull
+Task<AuthResult> task) {
+user =
+FirebaseAuth.getInstance().getCurrentUser();
+UserProfileChangeRequest
+profileChangeRequest = new
+UserProfileChangeRequest.Builder().setDisplayName(nama).b
+uild();
+user.updateProfile(profileChangeRequest)
+.addOnCompleteListener(new OnCompleteListener<Void>() {
+@Override
+public void
+onComplete(@NonNull Task<Void> task) {
+if
+(task.isSuccessful()) {
+hideProgress();
+String
+uid = user.getUid();
+NewUser
+data = new NewUser(nama, telepon, email);
+databaseReference
+.child("user")
+.child("data")
+.child(uid)
+.setValue(data);
+}
+}
+});
+hideProgress();
+if (task.isSuccessful()) {
+// signup success
+AlertDialog.Builder
+alertDialogBuilder = new
+AlertDialog.Builder(Daftar.this);
+alertDialogBuilder.setTitle("Signup");
+alertDialogBuilder.setMessage("Your account has been
+registered. Please sign in use your username and
+password.");
+alertDialogBuilder.setPositiveButton("OK", new
+DialogInterface.OnClickListener() {
+@Override
+public void
+onClick(DialogInterface dialogInterface, int i) {
+dialogInterface.dismiss();
+finish();
+}
+});
+alertDialogBuilder.show();
+} else {
+task.getException().printStackTrace();
+// signup fail
+final Snackbar snackbar =
+Snackbar.make(findViewById(android.R.id.content),
+"registered has been failed! Please try again.",
+Snackbar.LENGTH_INDEFINITE);
+snackbar.setAction("OK",
+new View.OnClickListener() {
+@Override
+public void
+onClick(View view) {
+snackbar.dismiss();
+}
+});
+snackbar.setActionTextColor(getResources().getColor(R.col
+or.colorAccent));
+snackbar.show();
+}
+}
+});
+}
+}
+private void hideProgress() {
+progressBar.setVisibility(View.INVISIBLE);
+}
+private void showProgress() {
+progressBar.setVisibility(View.VISIBLE);
+}
+}
+
+public class Home extends AppCompatActivity {
+private LinearLayout btnCuci,akun,map,riwayat;
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+super.onCreate(savedInstanceState);
+setContentView(R.layout.activity_home);
+btnCuci = findViewById(R.id.cuci);
+akun = findViewById(R.id.Akun);
+map = findViewById(R.id.map);
+riwayat = findViewById(R.id.riwayat);
+btnCuci.setOnClickListener(new
+View.OnClickListener() {
+@Override
+public void onClick(View view) {
+Intent cuci = new Intent(Home.this,
+TanggalPesanan.class);
+startActivity(cuci);
+}
+});
+akun.setOnClickListener(new
+View.OnClickListener() {
+@Override
+public void onClick(View view) {
+Intent akun = new Intent(Home.this,
+Akun.class);
+startActivity(akun);
+}
+});
+map.setOnClickListener(new View.OnClickListener()
+{
+@Override
+public void onClick(View view) {
+Intent map = new Intent(Home.this,
+Map.class);
+startActivity(map);
+}
+});
+riwayat.setOnClickListener(new
+View.OnClickListener() {
+@Override
+public void onClick(View view) {
+Intent riwayat = new Intent(Home.this,
+Riwayat.class);
+startActivity(riwayat);
+}
+});
+}
+@Override
+public void onBackPressed() {
+}
+}
+
+
+public class Map extends FragmentActivity implements
+OnMapReadyCallback {
+private static final LatLng Cabang1 = new
+LatLng(3.550051, 98.649437);
+private static final LatLng Cabang2 = new
+LatLng(3.577249, 98.653686);
+private static final LatLng Cabang3 = new
+LatLng(3.608302, 98.665702);
+private Marker mPerth;
+private Marker mSydney;
+private Marker mBrisbane;
+private GoogleMap mMap;
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+super.onCreate(savedInstanceState);
+setContentView(R.layout.activity_map);
+SupportMapFragment mapFragment =
+(SupportMapFragment) getSupportFragmentManager()
+.findFragmentById(R.id.map);
+mapFragment.getMapAsync(this);
+}
+@Override
+public void onMapReady(GoogleMap map) {
+mMap = map;
+// Add some markers to the map, and add a data
+object to each marker.
+mPerth = mMap.addMarker(new MarkerOptions()
+.position(Cabang1)
+.title("Semabada No. 13A"));
+mPerth.setTag(0);
+mSydney = mMap.addMarker(new MarkerOptions()
+.position(Cabang2)
+.title("Abdullah Lubis No. 17"));
+mSydney.setTag(0);
+mBrisbane = mMap.addMarker(new MarkerOptions()
+.position(Cabang3)
+.title("Karya No.3"));
+mBrisbane.setTag(0);
+CameraUpdate center=
+CameraUpdateFactory.newLatLng(new
+LatLng(3.595196, 98.672223));
+CameraUpdate zoom=CameraUpdateFactory.zoomTo(12);
+map.moveCamera(center);
+map.animateCamera(zoom);
+}
+}
+
+public class TanggalPesanan extends AppCompatActivity {
+TextView Txt_lat_lng,Txt_tempat;
+String S_jam,S_tanggal,S_Catatan,toastMsg,Tempat;
+Button Btn_next;
+Calendar myCalendar = Calendar.getInstance();
+EditText
+Edt_tanggal_order,Edt_jam_order,Edt_catatan_order;
+ImageView Img_add_lokasi;
+Locale id;
+private final static int PLACE_PICKER_REQUEST = 1;
+private FirebaseAuth firebaseAuth;
+private FirebaseAuth.AuthStateListener
+authStateListener;
+private DatabaseReference databaseReference;
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+super.onCreate(savedInstanceState);
+setContentView(R.layout.activity_tanggal_pesanan);
+Img_add_lokasi = findViewById(R.id.Img_place);
+Btn_next = findViewById(R.id.Btn_next);
+Txt_lat_lng = findViewById(R.id.Txt_lat_lng);
+Txt_tempat = findViewById(R.id.Txt_tempat);
+Edt_tanggal_order =
+findViewById(R.id.Edt_tanggal_order);
+Edt_jam_order = findViewById(R.id.Edt_jam_order);
+Edt_catatan_order =
+findViewById(R.id.Edt_Catatan_order);
+initFirebase();
+initAuthStateListener();
+id = new Locale("in", "ID");
+Edt_jam_order.setOnClickListener(new
+View.OnClickListener() {
+@Override
+public void onClick(View view) {
+Calendar mcurrentTime =
+Calendar.getInstance();
+int hour =
+mcurrentTime.get(Calendar.HOUR_OF_DAY);
+int minute =
+mcurrentTime.get(Calendar.MINUTE);
+TimePickerDialog mTimePicker;
+mTimePicker = new
+TimePickerDialog(TanggalPesanan.this, new
+TimePickerDialog.OnTimeSetListener() {
+@Override
+public void onTimeSet(TimePicker
+timePicker, int selectedHour, int selectedMinute) {
+Edt_jam_order.setText(
+selectedHour + ":" + selectedMinute);
+S_jam =
+Edt_jam_order.getText().toString();
+}
+}, hour, minute, true);
+mTimePicker.setTitle("Pilih Waktu");
+mTimePicker.show();
+}
+});
+Img_add_lokasi.setOnClickListener(new
+View.OnClickListener() {
+@Override
+public void onClick(View view) {
+PlacePicker.IntentBuilder builder = new
+PlacePicker.IntentBuilder();
+try {
+startActivityForResult(builder.build(TanggalPesanan.this)
+, PLACE_PICKER_REQUEST);
+} catch
+(GooglePlayServicesRepairableException e) {
+e.printStackTrace();
+} catch
+(GooglePlayServicesNotAvailableException e) {
+e.printStackTrace();
+}
+}
+});
+final DatePickerDialog.OnDateSetListener date =
+new DatePickerDialog.OnDateSetListener() {
+@Override
+public void onDateSet(DatePicker datePicker,
+int tahun, int bulan, int hari) {
+myCalendar.set(Calendar.YEAR, tahun);
+myCalendar.set(Calendar.MONTH, bulan);
+myCalendar.set(Calendar.DAY_OF_MONTH,
+hari);
+updateLabel();
+}
+};
+Edt_tanggal_order.setOnClickListener(new
+View.OnClickListener() {
+@Override
+public void onClick(View view) {
+new DatePickerDialog(TanggalPesanan.this,
+date, myCalendar
+.get(Calendar.YEAR),
+myCalendar.get(Calendar.MONTH),
+myCalendar.get(Calendar.DAY_OF_MONTH)).show();
+}
+});
+Btn_next.setOnClickListener(new
+View.OnClickListener() {
+@Override
+public void onClick(View view) {
+next();
+}
+});
+}
+public void next(){
+if (TextUtils.isEmpty(S_tanggal)) {
+Toast.makeText(this, "Tanggal Penjemputan
+Belum Di Isi", Toast.LENGTH_SHORT).show();
+} else if (TextUtils.isEmpty(S_jam)) {
+Toast.makeText(this, "Jam Penjemputan Belum
+Di Isi", Toast.LENGTH_SHORT).show();
+}
+else if (TextUtils.isEmpty(Tempat)) {
+Toast.makeText(this, "Tempat Penjemputan
+Belum Di Isi", Toast.LENGTH_SHORT).show();
+}else {
+S_Catatan =
+Edt_catatan_order.getText().toString().trim();
+Intent Btn_next = new
+Intent(TanggalPesanan.this, Pakaian.class);
+Btn_next.putExtra("Tanggal", S_tanggal);
+Btn_next.putExtra("Jam", S_jam);
+Btn_next.putExtra("Tempat", Tempat);
+Btn_next.putExtra("Catatan", S_Catatan);
+startActivity(Btn_next);
+}
+}
+private void updateLabel() {
+String myFormat = "MM-dd-yyyy"; //In which you
+need put here
+SimpleDateFormat sdf = new
+SimpleDateFormat("EEEE, d MMMM yyyy", id);
+//SimpleDateFormat sdf = new
+SimpleDateFormat(myFormat, Locale.US);
+Edt_tanggal_order.setText(sdf.format(myCalendar.getTime()
+));
+S_tanggal =
+Edt_tanggal_order.getText().toString();
+}
+@Override
+public boolean onCreateOptionsMenu(Menu menu) {
+getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+return true;
+}
+@Override
+protected void onActivityResult(int requestCode, int
+resultCode, Intent data) {
+if (requestCode == PLACE_PICKER_REQUEST) {
+if (resultCode == RESULT_OK) {
+Place place = PlacePicker.getPlace(data,
+this);
+toastMsg = String.format(
+"Alamat: %s \n" +
+"Latlng %s \n",
+place.getAddress(), place.getLatLng().latitude+"
+"+place.getLatLng().longitude);
+Txt_lat_lng.setText(toastMsg);
+Tempat = String.format(
+"Tempat: %s \n" +
+"Alamat: %s \n" +
+"Latlng %s \n",
+place.getName(), place.getAddress(),
+place.getLatLng().latitude+"
+"+place.getLatLng().longitude);
+Txt_tempat.setText(String.format(String.valueOf(place.get
+Name())));
+}
+}
+}
+private void initAuthStateListener() {
+authStateListener = new
+FirebaseAuth.AuthStateListener() {
+@Override
+public void onAuthStateChanged(@NonNull
+FirebaseAuth firebaseAuth) {
+if (firebaseAuth.getCurrentUser() !=
+null) {
+// user still sign in
+} else {
+// user session sign in has been
+timeout
+Toast.makeText(TanggalPesanan.this,
+"Terjadi Kesalahan", Toast.LENGTH_SHORT).show();
+}
+}
+};
+}
+private void initFirebase() {
+firebaseAuth = FirebaseAuth.getInstance();
+databaseReference =
+FirebaseDatabase.getInstance().getReference();
+}
+}
+
+public class Konfirmasi extends AppCompatActivity {
+int Harga_Total, Harga_Kaos, Harga_Kemeja,
+Harga_C_Pendek, Harga_C_Panjang, Harga_C_Jeans,
+Harga_Bed_Cover, Harga_Selimut, Total_pakaian;
+String tanggal, lokasi, jam, catatan, name, telp;
+TextView Total_Harga, Kaos, Kemeja, Celana_Pendek,
+Celana_Panjang, Celana_Jeans, Bed_Cover, Selimut,
+Txt_alamat_informasi, Txt_tanggal_informasi,
+Txt_jam_informasi, Txt_tanggal_siap_informasi,
+Txt_jam_siap_informasi, Txt_telepon_informasi,
+Txt_nama_informasi;
+Button konfirmasi;
+private FirebaseAuth firebaseAuth;
+private DatabaseReference databaseReference;
+private String uid, jumlah_pakaian, jumlah_harga;
+private FirebaseUser user;
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+super.onCreate(savedInstanceState);
+setContentView(R.layout.activity_konfirmasi);
+Total_Harga = findViewById(R.id.Total_Harga);
+Kaos = findViewById(R.id.kaos);
+Kemeja = findViewById(R.id.Kemeja);
+Celana_Pendek = findViewById(R.id.Celana_Pendek);
+Celana_Panjang =
+findViewById(R.id.Celana_Panjang);
+Celana_Jeans = findViewById(R.id.Celana_Jeans);
+Bed_Cover = findViewById(R.id.Bed_Cover);
+Selimut = findViewById(R.id.Selimut);
+Txt_alamat_informasi =
+findViewById(R.id.Txt_alamat_informasi);
+Txt_jam_informasi =
+findViewById(R.id.Txt_jam_informasi);
+Txt_jam_siap_informasi =
+findViewById(R.id.Txt_jam_siap_informasi);
+Txt_tanggal_informasi =
+findViewById(R.id.Txt_tanggal_informasi);
+Txt_tanggal_siap_informasi =
+findViewById(R.id.Txt_tanggal_siap_informasi);
+Txt_telepon_informasi
+=findViewById(R.id.Txt_telepon_informasi);
+Txt_nama_informasi =
+findViewById(R.id.Txt_nama_informasi);
+initFirebase();
+user =
+FirebaseAuth.getInstance().getCurrentUser();
+name = user.getDisplayName();
+uid = user.getUid();
+Txt_nama_informasi.setText(name);
+databaseReference.child("user")
+.child("data")
+.child(uid)
+.child("telepon")
+.addValueEventListener(new
+ValueEventListener() {
+@Override
+public void onDataChange(DataSnapshot
+dataSnapshot) {
+telp =
+String.valueOf(dataSnapshot.getValue());
+Txt_telepon_informasi.setText(telp);
+}
+@Override
+public void onCancelled(DatabaseError
+databaseError) {
+}
+});
+final HashMap<String,Integer> pakaian ;
+Bundle bundle = getIntent().getExtras();
+pakaian = (HashMap<String, Integer>)
+bundle.get("pakaian");
+Total_pakaian = bundle.getInt("total_pakaian");
+Harga_Total = bundle.getInt("total_harga");
+Harga_Kaos = bundle.getInt("kaos");
+Harga_Kemeja = bundle.getInt("kemeja");
+Harga_C_Pendek = bundle.getInt("celana_pendek");
+Harga_C_Panjang =
+bundle.getInt("celana_panjang");
+Harga_C_Jeans = bundle.getInt("celana_jeans");
+Harga_Bed_Cover = bundle.getInt("bed_cover");
+Harga_Selimut = bundle.getInt("selimut");
+tanggal = bundle.getString("tanggal");
+jam = bundle.getString("jam");
+lokasi = bundle.getString("lokasi");
+catatan = bundle.getString("catatan");
+Total_Harga.setText("Rp. " + Harga_Total);
+Kaos.setText("" + Harga_Kaos);
+Kemeja.setText("" + Harga_Kemeja);
+Celana_Pendek.setText("" + Harga_C_Pendek);
+Celana_Panjang.setText("" + Harga_C_Panjang);
+Celana_Jeans.setText("" + Harga_C_Jeans);
+Bed_Cover.setText("" + Harga_Bed_Cover);
+Selimut.setText("" + Harga_Selimut);
+Txt_alamat_informasi.setText("" + lokasi);
+Txt_jam_informasi.setText("" + jam);
+Txt_jam_siap_informasi.setText(""+jam);
+Txt_tanggal_informasi.setText("" + tanggal);
+Txt_tanggal_siap_informasi.setText("+3 Hari
+"+tanggal);
+jumlah_harga = String.valueOf(Harga_Total);
+jumlah_pakaian = String.valueOf(Total_pakaian);
+konfirmasi = findViewById(R.id.konfirmasi);
+konfirmasi.setOnClickListener(new
+View.OnClickListener() {
+@Override
+public void onClick(View view) {
+AlertDialog.Builder alertDialogBuilder =
+new AlertDialog.Builder(Konfirmasi.this);
+alertDialogBuilder.setTitle("Konfirmasi
+Pesanan");
+alertDialogBuilder.setMessage("Apakah
+Semua Data Sudah Benar");
+alertDialogBuilder.setPositiveButton("OK", new
+DialogInterface.OnClickListener() {
+@Override
+public void onClick(DialogInterface
+dialogInterface, int i) {
+DataOrder dataOrder = new
+DataOrder(tanggal, jumlah_pakaian, jumlah_harga, name,
+lokasi, catatan, jam, pakaian);
+databaseReference.child("order_laundry")
+.child("id_order")
+.child(uid)
+.push()
+.setValue(dataOrder);
+dialogInterface.dismiss();
+Intent konfirmasi = new
+Intent(Konfirmasi.this, Thanks.class);
+startActivity(konfirmasi);
+}
+});
+alertDialogBuilder.setNegativeButton("Batal", new
+DialogInterface.OnClickListener() {
+@Override
+public void onClick(DialogInterface
+dialogInterface, int i) {
+dialogInterface.dismiss();
+}
+});
+alertDialogBuilder.show();
+}
+});
+}
+private void initFirebase() {
+firebaseAuth = FirebaseAuth.getInstance();
+databaseReference =
+FirebaseDatabase.getInstance().getReference();
+}
+@Override
+public boolean onCreateOptionsMenu(Menu menu) {
+getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+return true;
+}
+@Override
+public boolean onOptionsItemSelected(MenuItem item) {
+Intent konfirmasi = new Intent(Konfirmasi.this,
+Pakaian.class);
+startActivity(konfirmasi);
+return super.onOptionsItemSelected(item);
+}
+}
+
+public class Thanks extends AppCompatActivity {
+Button home;
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+super.onCreate(savedInstanceState);
+setContentView(R.layout.activity_thanks);
+home = findViewById(R.id.home);
+home.setOnClickListener(new
+View.OnClickListener() {
+@Override
+public void onClick(View view) {
+Intent home = new
+Intent(Thanks.this,Home.class);
+startActivity(home);
+}
+});
+}
+}
+
+public class Riwayat extends AppCompatActivity {
+private DatabaseReference mDatabase;
+private FirebaseDatabase firebaseDatabase;
+private FirebaseUser user;
+private FirebaseAuth firebaseAuth;
+String uid;
+private List<RiwayatOrder> listData;
+private List<String> listKey;
+private AdapterData adapterData;
+RecyclerView recyclerViewData;
+private int editPosition;
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+super.onCreate(savedInstanceState);
+setContentView(R.layout.activity_riwayat);
+recyclerViewData =
+findViewById(R.id.recycler_view_fragment_home);
+LinearLayoutManager layoutManager = new
+LinearLayoutManager(this);
+DividerItemDecoration dividerItemDecoration = new
+DividerItemDecoration(this,
+DividerItemDecoration.VERTICAL);
+recyclerViewData.addItemDecoration(dividerItemDecoration)
+;
+recyclerViewData.setLayoutManager(layoutManager);
+//recyclerViewData.setHasFixedSize(true);
+listData = new ArrayList<>();
+initFirebase();
+user =
+FirebaseAuth.getInstance().getCurrentUser();
+uid = user.getUid();
+listKey = new ArrayList<>();
+listData = new ArrayList<>();
+firebaseDatabase.getReference()
+.child("order_laundry")
+.child("id_order")
+.child(uid)
+.addListenerForSingleValueEvent(new
+ValueEventListener() {
+@Override
+public void onDataChange(DataSnapshot
+dataSnapshot) {
+Log.d("aa",
+String.valueOf(dataSnapshot));
+Log.d("aa", "tes");
+for (DataSnapshot dataItem :
+dataSnapshot.getChildren()) {
+RiwayatOrder riwayatOrder =
+dataItem.getValue(RiwayatOrder.class);
+//Mengambil nilai key catatan
+push()
+listKey.add(dataItem.getKey());
+//Mengambil data isi tiap
+push
+listData.add(riwayatOrder);
+}
+adapterData = new
+AdapterData(listData);
+recyclerViewData.setAdapter(adapterData);
+}
+@Override
+public void onCancelled(DatabaseError
+databaseError) {
+}
+});
+initFirebaseListener();
+}
+private void initFirebase() {
+firebaseAuth = FirebaseAuth.getInstance();
+mDatabase =
+FirebaseDatabase.getInstance().getReference();
+// mDatabase.keepSynced(true);
+firebaseDatabase =
+FirebaseDatabase.getInstance();
+}
+private void initFirebaseListener() {
+final List<RiwayatOrder> listRiwayatOrder = new
+ArrayList<>();
+firebaseDatabase.getReference()
+.child("order_laundry")
+.child("id_order")
+.child(uid)
+.addChildEventListener(new
+ChildEventListener() {
+@Override
+public void onChildAdded(DataSnapshot
+dataSnapshot, String s) {
+Log.d("tag",
+String.valueOf(dataSnapshot));
+}
+@Override
+public void
+onChildChanged(DataSnapshot dataSnapshot, String s) {
+// do something
+Log.d("tag", "onChildChanged");
+Map<String, String>
+mapDataChanged = new HashMap<>();
+for (DataSnapshot dataItem :
+dataSnapshot.getChildren()) {
+mapDataChanged.put(dataItem.getKey(),
+dataItem.getValue().toString());
+}
+adapterData.refreshItem(mapDataChanged, editPosition);
+}
+@Override
+public void
+onChildRemoved(DataSnapshot dataSnapshot) {
+Log.d("tag", "onChildRemoved");
+}
+@Override
+public void onChildMoved(DataSnapshot
+dataSnapshot, String s) {
+Log.d("tag", "onChildMoved");
+}
+@Override
+public void onCancelled(DatabaseError
+databaseError) {
+Log.d("tag", "onCancelled");
+}
+});
+}
+}
